@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d0c">
+  <meta name="description" content="2分のラウンドと1分のインターバルを管理するiPhone向けタイマー">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>ROUND TIMER</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b0d0c;--panel:#141715;--line:#292e2a;--muted:#818b83;--text:#f5f7f4;--lime:#d2fb58;--red:#ff6459;--blue:#84d9ff;--safe-bottom:env(safe-area-inset-bottom,0px)}
+    *{box-sizing:border-box} html{min-height:100%;background:var(--bg)} body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% 8%,#182019 0%,var(--bg) 58%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+    button,select{font:inherit} button{-webkit-tap-highlight-color:transparent;touch-action:manipulation} .app{width:min(100%,480px);min-height:100dvh;margin:auto;padding:calc(18px + env(safe-area-inset-top,0px)) 24px calc(22px + var(--safe-bottom));display:flex;flex-direction:column}
+    header{height:42px;display:flex;align-items:center;justify-content:space-between}.brand{font-size:13px;font-weight:900;letter-spacing:.17em}.brand-mark{color:var(--lime)}.live{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.13em;color:var(--muted);font-weight:800}.live-dot{height:7px;width:7px;border-radius:50%;background:#454b45}.live.on .live-dot{background:var(--lime);box-shadow:0 0 10px #d2fb5880}
+    .eyebrow{font-size:10px;letter-spacing:.2em;color:var(--muted);font-weight:800}.config{margin:28px 0 10px;padding:0 2px}.config-row{display:flex;justify-content:space-between;align-items:end;gap:12px}.config label{display:block;color:var(--muted);font-size:12px;font-weight:650;margin-bottom:9px}.select-wrap{position:relative}.select-wrap:after{content:"⌄";position:absolute;right:15px;top:50%;transform:translateY(-57%);font-size:18px;color:var(--lime);pointer-events:none}.round-select{appearance:none;-webkit-appearance:none;width:150px;height:48px;border:1px solid #373e38;border-radius:12px;background:#171b18;color:var(--text);font-size:16px;font-weight:800;padding:0 38px 0 15px;outline:none}.round-select:focus-visible{border-color:var(--lime)}.total{padding-bottom:4px;text-align:right}.total strong{font-size:20px;letter-spacing:-.04em}.total span{color:var(--muted);font-size:11px;margin-left:4px}
+    .timer-card{position:relative;margin-top:18px;padding:22px 18px 16px;border:1px solid #272d28;border-radius:24px;background:linear-gradient(160deg,#171b18,#111412 72%);box-shadow:0 18px 65px #0005;overflow:hidden}.timer-top{display:flex;align-items:center;justify-content:space-between}.phase-pill{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:20px;border:1px solid #313832;color:var(--lime);font-size:10px;font-weight:900;letter-spacing:.12em}.phase-pill.rest{color:var(--blue)}.phase-pill.prep{color:#ffcf70}.round-badge{font-size:12px;color:var(--muted);font-weight:700}.round-badge strong{font-size:18px;color:var(--text);margin-right:3px}.clock-wrap{position:relative;display:grid;place-items:center;padding:22px 0 18px}.ring{width:min(67vw,270px);height:min(67vw,270px);max-width:270px;max-height:270px;transform:rotate(-90deg)}.ring-bg{fill:none;stroke:#2b312c;stroke-width:7}.ring-progress{fill:none;stroke:var(--lime);stroke-width:7;stroke-linecap:round;stroke-dasharray:754;stroke-dashoffset:0;transition:stroke .3s}.timer-card.rest .ring-progress{stroke:var(--blue)}.timer-card.prep .ring-progress{stroke:#ffcf70}.clock-center{position:absolute;display:flex;align-items:center;flex-direction:column;gap:4px}.time{font-size:clamp(66px,19vw,88px);font-weight:800;letter-spacing:-.075em;line-height:1;font-variant-numeric:tabular-nums}.phase-name{font-size:12px;font-weight:850;letter-spacing:.28em;color:var(--muted);padding-left:.28em}.timer-card.rest .phase-name{color:var(--blue)}.timer-card.prep .phase-name{color:#ffcf70}.status-line{text-align:center;color:var(--muted);font-size:12px;min-height:18px}.sequence{display:flex;justify-content:center;align-items:center;gap:8px;margin:21px 0 3px}.seq{height:32px;min-width:39px;padding:0 10px;border:1px solid #333a34;border-radius:9px;color:#687168;display:grid;place-items:center;font-size:10px;font-weight:900;letter-spacing:.04em}.seq.active{border-color:var(--lime);color:var(--lime);background:#d2fb5810}.seq.rest-active{border-color:var(--blue);color:var(--blue);background:#84d9ff10}.seq.done{color:#414940;border-color:#252a26}.seq-gap{font-size:11px;color:#465047}
+    .controls{display:grid;grid-template-columns:1fr 64px;gap:12px;margin-top:auto;padding-top:26px}.primary,.reset{height:60px;border:0;border-radius:16px;font-weight:900;letter-spacing:.08em}.primary{color:#14180b;background:var(--lime);font-size:16px;box-shadow:0 5px 22px #d2fb5820}.primary:active{transform:scale(.985)}.primary:disabled{opacity:.45}.reset{border:1px solid #323832;background:#151916;color:#adb6ae;font-size:22px}.reset:active{background:#202520}.hint{text-align:center;margin-top:14px;color:#626b63;font-size:10px;line-height:1.7}.hint strong{color:#89938a}
+    .complete .ring-progress{stroke:var(--lime)}
+    @media(min-height:850px){.config{margin-top:40px}.timer-card{margin-top:24px;padding-top:26px}.clock-wrap{padding:30px 0 23px}.sequence{margin-top:25px}.controls{padding-top:34px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand"><span class="brand-mark">●</span> ROUND TIMER</div>
+      <div class="live" id="live"><span class="live-dot"></span><span id="liveText">READY</span></div>
+    </header>
+    <section class="config" aria-label="タイマー設定">
+      <div class="config-row">
+        <div><label for="roundCount">ラウンド数 <span class="eyebrow">/ ROUNDS</span></label><div class="select-wrap"><select id="roundCount" class="round-select" aria-label="ラウンド数"></select></div></div>
+        <div class="total"><strong id="totalTime">14</strong><span>分</span><div class="eyebrow" style="margin-top:3px">TOTAL TIME</div></div>
+      </div>
+    </section>
+    <section class="timer-card" id="timerCard" aria-label="タイマー">
+      <div class="timer-top"><div id="phasePill" class="phase-pill">● 準備中</div><div class="round-badge">ROUND <strong id="roundNum">1</strong><span id="roundDenom">/ 7</span></div></div>
+      <div class="clock-wrap">
+        <svg class="ring" viewBox="0 0 260 260" aria-hidden="true"><circle class="ring-bg" cx="130" cy="130" r="120"/><circle class="ring-progress" id="progress" cx="130" cy="130" r="120"/></svg>
+        <div class="clock-center"><div class="time" id="time" role="timer" aria-live="off">10:00</div><div class="phase-name" id="phaseName">READY</div></div>
+      </div>
+      <div class="status-line" id="statusLine">ラウンド数を選んでスタート</div>
+      <div class="sequence" id="sequence" aria-label="ラウンド進行"></div>
+    </section>
+    <div class="controls"><button class="primary" id="startBtn" type="button">スタート</button><button class="reset" id="resetBtn" type="button" aria-label="リセット">↺</button></div>
+    <p class="hint"><strong>2分 = 1R</strong>　／　ラウンド間 1分インターバル<br>画面を開いたままご使用ください</p>
+  </main>
+  <script>
+    (() => {
+      const PREP = 10, ROUND = 120, REST = 60, CIRC = 2 * Math.PI * 120;
+      const $ = (id) => document.getElementById(id);
+      const select = $('roundCount'), timeEl = $('time'), progress = $('progress'), card = $('timerCard'), pill = $('phasePill'), phaseName = $('phaseName'), status = $('statusLine'), roundNum = $('roundNum'), roundDenom = $('roundDenom'), totalTime = $('totalTime'), startBtn = $('startBtn'), sequence = $('sequence'), live = $('live'), liveText = $('liveText');
+      let state = 'idle', segments = [], index = 0, deadline = 0, duration = PREP, tickId = 0, audioCtx = null, wakeLock = null;
+      progress.style.strokeDasharray = CIRC;
+      for (let n = 1; n <= 20; n++) { const opt = document.createElement('option'); opt.value = n; opt.textContent = `${n} ラウンド`; if (n === 7) opt.selected = true; select.append(opt); }
+      function totalMinutes(n) { return n * 2 + Math.max(0, n - 1); }
+      function buildSegments(n) { const list = []; for (let r = 1; r <= n; r++) { list.push({type:'round', round:r, seconds:ROUND}); if (r < n) list.push({type:'rest', round:r, seconds:REST}); } return list; }
+      function updateTotal() { totalTime.textContent = totalMinutes(+select.value); roundDenom.textContent = `/ ${select.value}`; renderSequence(); }
+      function renderSequence() { sequence.replaceChildren(); const n = +select.value; for (let r = 1; r <= n; r++) { if (r > 1) { const gap = document.createElement('span'); gap.className='seq-gap'; gap.textContent='·'; sequence.append(gap); } const item = document.createElement('span'); const active = state === 'running' && segments[index]?.type === 'round' && segments[index]?.round === r; const done = state === 'running' ? (segments[index]?.round > r || (segments[index]?.round === r && segments[index]?.type === 'rest')) : false; item.className = `seq${active ? ' active' : ''}${done ? ' done' : ''}`; item.textContent = `${r}R`; sequence.append(item); } }
+      function fmt(s) { const whole = Math.max(0, Math.ceil(s)); return `${String(Math.floor(whole/60)).padStart(2,'0')}:${String(whole%60).padStart(2,'0')}`; }
+      function beep(kind='normal') { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); const now = audioCtx.currentTime; const count = kind === 'finish' ? 3 : 2; for (let i=0; i<count; i++) { const osc=audioCtx.createOscillator(), gain=audioCtx.createGain(), start=now+i*.2; osc.type='sine'; osc.frequency.value=kind==='finish'?1040:880; gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(.32,start+.012); gain.gain.exponentialRampToValueAtTime(.0001,start+.15); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(start); osc.stop(start+.16); } } catch(e) { status.textContent='音声を有効にできませんでした'; } }
+      function renderClock(remaining) { timeEl.textContent=fmt(remaining); progress.style.strokeDashoffset=String(CIRC*(1-Math.max(0,remaining)/duration)); }
+      function setPhase(seg) { duration=seg.seconds; roundNum.textContent=seg.round; const isRest=seg.type==='rest'; card.classList.toggle('rest',isRest); card.classList.remove('prep','complete'); pill.className=`phase-pill${isRest?' rest':''}`; pill.textContent=isRest?'● インターバル':'● ラウンド'; phaseName.textContent=isRest?'REST':'FIGHT'; status.textContent=isRest?'次のラウンドまで':'最後まで集中'; renderClock(duration); renderSequence(); document.title=`${fmt(duration)} ${isRest?'REST':'ROUND'} | ROUND TIMER`; }
+      function update() { if (state !== 'running') return; let left=(deadline-Date.now())/1000; while (left <= 0 && state === 'running') { beep(); index++; if (index >= segments.length) { finish(); return; } const seg=segments[index]; duration=seg.seconds; deadline += duration*1000; setPhase(seg); left=(deadline-Date.now())/1000; } renderClock(left); }
+      function start() { if (state === 'running') return; if (state === 'idle' || state === 'done') { segments=buildSegments(+select.value); index=-1; state='running'; duration=PREP; deadline=Date.now()+PREP*1000; card.classList.remove('complete','rest'); card.classList.add('prep'); pill.className='phase-pill prep'; pill.textContent='● スタート準備'; phaseName.textContent='GET READY'; status.textContent='10秒後に第1ラウンド開始'; roundNum.textContent='1'; renderClock(PREP); renderSequence(); document.title='準備中 | ROUND TIMER'; beep('soft'); requestWakeLock(); }
+        else if (state === 'paused') { state='running'; deadline=Date.now()+remainingPaused*1000; requestWakeLock(); }
+        startBtn.textContent='一時停止'; live.classList.add('on'); liveText.textContent='RUNNING'; select.disabled=true; tickId=window.setInterval(update,100); }
+      let remainingPaused=0;
+      function pause() { if(state!=='running')return; remainingPaused=Math.max(0,(deadline-Date.now())/1000); clearInterval(tickId); state='paused'; startBtn.textContent='再開'; status.textContent='一時停止中'; liveText.textContent='PAUSED'; releaseWakeLock(); }
+      function finish() { clearInterval(tickId); state='done'; card.classList.remove('prep','rest'); card.classList.add('complete'); pill.className='phase-pill'; pill.textContent='● COMPLETE'; phaseName.textContent='FINISH'; status.textContent=`全 ${select.value} ラウンド終了！お疲れさまでした`; renderClock(0); progress.style.strokeDashoffset=CIRC; startBtn.textContent='もう一度'; startBtn.disabled=false; live.classList.remove('on'); liveText.textContent='DONE'; select.disabled=false; document.title='完了 | ROUND TIMER'; beep('finish'); releaseWakeLock(); renderSequence(); }
+      function reset() { clearInterval(tickId); state='idle'; index=0; segments=[]; select.disabled=false; card.classList.remove('rest','prep','complete'); pill.className='phase-pill'; pill.textContent='● 準備中'; phaseName.textContent='READY'; roundNum.textContent='1'; status.textContent='ラウンド数を選んでスタート'; renderClock(PREP); progress.style.strokeDashoffset='0'; startBtn.textContent='スタート'; startBtn.disabled=false; live.classList.remove('on'); liveText.textContent='READY'; document.title='ROUND TIMER'; releaseWakeLock(); renderSequence(); }
+      async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock=await navigator.wakeLock.request('screen'); } catch(e) {} }
+      async function releaseWakeLock() { try { if(wakeLock) await wakeLock.release(); } catch(e) {} wakeLock=null; }
+      startBtn.addEventListener('click',()=>{ if(state==='running') pause(); else start(); }); $('resetBtn').addEventListener('click',reset); select.addEventListener('change',updateTotal); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && state==='running'){ requestWakeLock(); update(); } });
+      updateTotal(); renderClock(PREP);
+    })();
+  </script>
+</body>
+</html>
+
