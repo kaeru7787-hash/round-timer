@@ -43,7 +43,7 @@
       <div class="sequence" id="sequence" aria-label="ラウンド進行"></div>
     </section>
     <div class="controls"><button class="primary" id="startBtn" type="button">スタート</button><button class="reset" id="resetBtn" type="button" aria-label="リセット">↺</button></div>
-    <p class="hint"><strong>2分 = 1R</strong>　／　ラウンド間 1分インターバル<br>画面を開いたままご使用ください</p>
+    <p class="hint"><strong>2分 = 1R</strong>　／　ラウンド間 1分インターバル<br>iOS 16.4以降はマナーモード中もブザーが鳴ります（音量にご注意ください）<br>画面を開いたままご使用ください</p>
   </main>
   <script>
     (() => {
@@ -58,11 +58,12 @@
       function updateTotal() { totalTime.textContent = totalMinutes(+select.value); roundDenom.textContent = `/ ${select.value}`; renderSequence(); }
       function renderSequence() { sequence.replaceChildren(); const n = +select.value; for (let r = 1; r <= n; r++) { if (r > 1) { const gap = document.createElement('span'); gap.className='seq-gap'; gap.textContent='·'; sequence.append(gap); } const item = document.createElement('span'); const active = state === 'running' && segments[index]?.type === 'round' && segments[index]?.round === r; const done = state === 'running' ? (segments[index]?.round > r || (segments[index]?.round === r && segments[index]?.type === 'rest')) : false; item.className = `seq${active ? ' active' : ''}${done ? ' done' : ''}`; item.textContent = `${r}R`; sequence.append(item); } }
       function fmt(s) { const whole = Math.max(0, Math.ceil(s)); return `${String(Math.floor(whole/60)).padStart(2,'0')}:${String(whole%60).padStart(2,'0')}`; }
+      function preferAudibleSession() { try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e) {} }
       function beep(kind='normal') { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); const now = audioCtx.currentTime; const count = kind === 'finish' ? 3 : 2; for (let i=0; i<count; i++) { const osc=audioCtx.createOscillator(), gain=audioCtx.createGain(), start=now+i*.2; osc.type='sine'; osc.frequency.value=kind==='finish'?1040:880; gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(.32,start+.012); gain.gain.exponentialRampToValueAtTime(.0001,start+.15); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(start); osc.stop(start+.16); } } catch(e) { status.textContent='音声を有効にできませんでした'; } }
       function renderClock(remaining) { timeEl.textContent=fmt(remaining); progress.style.strokeDashoffset=String(CIRC*(1-Math.max(0,remaining)/duration)); }
       function setPhase(seg) { duration=seg.seconds; roundNum.textContent=seg.round; const isRest=seg.type==='rest'; card.classList.toggle('rest',isRest); card.classList.remove('prep','complete'); pill.className=`phase-pill${isRest?' rest':''}`; pill.textContent=isRest?'● インターバル':'● ラウンド'; phaseName.textContent=isRest?'REST':'FIGHT'; status.textContent=isRest?'次のラウンドまで':'最後まで集中'; renderClock(duration); renderSequence(); document.title=`${fmt(duration)} ${isRest?'REST':'ROUND'} | ROUND TIMER`; }
       function update() { if (state !== 'running') return; let left=(deadline-Date.now())/1000; while (left <= 0 && state === 'running') { beep(); index++; if (index >= segments.length) { finish(); return; } const seg=segments[index]; duration=seg.seconds; deadline += duration*1000; setPhase(seg); left=(deadline-Date.now())/1000; } renderClock(left); }
-      function start() { if (state === 'running') return; if (state === 'idle' || state === 'done') { segments=buildSegments(+select.value); index=-1; state='running'; duration=PREP; deadline=Date.now()+PREP*1000; card.classList.remove('complete','rest'); card.classList.add('prep'); pill.className='phase-pill prep'; pill.textContent='● スタート準備'; phaseName.textContent='GET READY'; status.textContent='10秒後に第1ラウンド開始'; roundNum.textContent='1'; renderClock(PREP); renderSequence(); document.title='準備中 | ROUND TIMER'; beep('soft'); requestWakeLock(); }
+      function start() { if (state === 'running') return; preferAudibleSession(); if (state === 'idle' || state === 'done') { segments=buildSegments(+select.value); index=-1; state='running'; duration=PREP; deadline=Date.now()+PREP*1000; card.classList.remove('complete','rest'); card.classList.add('prep'); pill.className='phase-pill prep'; pill.textContent='● スタート準備'; phaseName.textContent='GET READY'; status.textContent='10秒後に第1ラウンド開始'; roundNum.textContent='1'; renderClock(PREP); renderSequence(); document.title='準備中 | ROUND TIMER'; beep('soft'); requestWakeLock(); }
         else if (state === 'paused') { state='running'; deadline=Date.now()+remainingPaused*1000; requestWakeLock(); }
         startBtn.textContent='一時停止'; live.classList.add('on'); liveText.textContent='RUNNING'; select.disabled=true; tickId=window.setInterval(update,100); }
       let remainingPaused=0;
@@ -77,4 +78,5 @@
   </script>
 </body>
 </html>
+
 
