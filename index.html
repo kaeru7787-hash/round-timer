@@ -43,7 +43,7 @@
       <div class="sequence" id="sequence" aria-label="ラウンド進行"></div>
     </section>
     <div class="controls"><button class="primary" id="startBtn" type="button">スタート</button><button class="reset" id="resetBtn" type="button" aria-label="リセット">↺</button></div>
-    <p class="hint"><strong>2分 = 1R</strong>　／　ラウンド間 1分インターバル<br>iOS 16.4以降はマナーモード中もブザーが鳴ります（音量にご注意ください）<br>画面を開いたままご使用ください</p>
+    <p class="hint"><strong>2分 = 1R</strong>　／　ラウンド間 1分インターバル<br>iOS 16.4以降はマナーモード中もブザーが鳴ります（大音量）<br>音量はiPhone本体のボタンで調整<br>画面を開いたままご使用ください</p>
   </main>
   <script>
     (() => {
@@ -59,7 +59,43 @@
       function renderSequence() { sequence.replaceChildren(); const n = +select.value; for (let r = 1; r <= n; r++) { if (r > 1) { const gap = document.createElement('span'); gap.className='seq-gap'; gap.textContent='·'; sequence.append(gap); } const item = document.createElement('span'); const active = state === 'running' && segments[index]?.type === 'round' && segments[index]?.round === r; const done = state === 'running' ? (segments[index]?.round > r || (segments[index]?.round === r && segments[index]?.type === 'rest')) : false; item.className = `seq${active ? ' active' : ''}${done ? ' done' : ''}`; item.textContent = `${r}R`; sequence.append(item); } }
       function fmt(s) { const whole = Math.max(0, Math.ceil(s)); return `${String(Math.floor(whole/60)).padStart(2,'0')}:${String(whole%60).padStart(2,'0')}`; }
       function preferAudibleSession() { try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e) {} }
-      function beep(kind='normal') { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); const now = audioCtx.currentTime; const count = kind === 'finish' ? 3 : 2; for (let i=0; i<count; i++) { const osc=audioCtx.createOscillator(), gain=audioCtx.createGain(), start=now+i*.2; osc.type='sine'; osc.frequency.value=kind==='finish'?1040:880; gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(.32,start+.012); gain.gain.exponentialRampToValueAtTime(.0001,start+.15); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(start); osc.stop(start+.16); } } catch(e) { status.textContent='音声を有効にできませんでした'; } }
+      function beep(kind='normal') {
+        try {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          preferAudibleSession();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const now = audioCtx.currentTime;
+          const limiter = audioCtx.createDynamicsCompressor();
+          limiter.threshold.value = -1; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = 0.003; limiter.release.value = 0.12; limiter.connect(audioCtx.destination);
+          if (kind === 'soft') {
+            const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.value = 620;
+            gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.22, now + 0.012); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.17);
+            osc.connect(gain); gain.connect(limiter); osc.start(now); osc.stop(now + 0.18);
+            window.setTimeout(() => limiter.disconnect(), 500);
+            return;
+          }
+          const blasts = kind === 'finish' ? 2 : 1;
+          for (let i = 0; i < blasts; i++) {
+            const t = now + i * 1.12, end = t + 0.86;
+            const low = audioCtx.createOscillator(), lowGain = audioCtx.createGain();
+            low.type = 'sawtooth'; low.frequency.setValueAtTime(138, t); low.frequency.linearRampToValueAtTime(112, end);
+            lowGain.gain.setValueAtTime(0.0001, t); lowGain.gain.exponentialRampToValueAtTime(0.92, t + 0.018); lowGain.gain.setValueAtTime(0.92, t + 0.68); lowGain.gain.exponentialRampToValueAtTime(0.0001, end);
+            low.connect(lowGain); lowGain.connect(limiter); low.start(t); low.stop(end + 0.01);
+            const harmonics = audioCtx.createOscillator(), harmonicGain = audioCtx.createGain();
+            harmonics.type = 'square'; harmonics.frequency.value = 276;
+            harmonicGain.gain.setValueAtTime(0.0001, t); harmonicGain.gain.exponentialRampToValueAtTime(0.18, t + 0.018); harmonicGain.gain.setValueAtTime(0.18, t + 0.68); harmonicGain.gain.exponentialRampToValueAtTime(0.0001, end);
+            harmonics.connect(harmonicGain); harmonicGain.connect(limiter); harmonics.start(t); harmonics.stop(end + 0.01);
+            const noiseBuffer = audioCtx.createBuffer(1, Math.ceil(audioCtx.sampleRate * 0.18), audioCtx.sampleRate), data = noiseBuffer.getChannelData(0);
+            for (let j = 0; j < data.length; j++) data[j] = Math.random() * 2 - 1;
+            const noise = audioCtx.createBufferSource(), highpass = audioCtx.createBiquadFilter(), noiseGain = audioCtx.createGain();
+            noise.buffer = noiseBuffer; highpass.type = 'highpass'; highpass.frequency.value = 1700;
+            noiseGain.gain.setValueAtTime(0.0001, t + 0.68); noiseGain.gain.exponentialRampToValueAtTime(0.42, t + 0.70); noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.86);
+            noise.connect(highpass); highpass.connect(noiseGain); noiseGain.connect(limiter); noise.start(t + 0.68); noise.stop(t + 0.87);
+          }
+          window.setTimeout(() => limiter.disconnect(), 3200);
+        } catch(e) { status.textContent='音声を有効にできませんでした'; }
+      }
       function renderClock(remaining) { timeEl.textContent=fmt(remaining); progress.style.strokeDashoffset=String(CIRC*(1-Math.max(0,remaining)/duration)); }
       function setPhase(seg) { duration=seg.seconds; roundNum.textContent=seg.round; const isRest=seg.type==='rest'; card.classList.toggle('rest',isRest); card.classList.remove('prep','complete'); pill.className=`phase-pill${isRest?' rest':''}`; pill.textContent=isRest?'● インターバル':'● ラウンド'; phaseName.textContent=isRest?'REST':'FIGHT'; status.textContent=isRest?'次のラウンドまで':'最後まで集中'; renderClock(duration); renderSequence(); document.title=`${fmt(duration)} ${isRest?'REST':'ROUND'} | ROUND TIMER`; }
       function update() { if (state !== 'running') return; let left=(deadline-Date.now())/1000; while (left <= 0 && state === 'running') { beep(); index++; if (index >= segments.length) { finish(); return; } const seg=segments[index]; duration=seg.seconds; deadline += duration*1000; setPhase(seg); left=(deadline-Date.now())/1000; } renderClock(left); }
@@ -78,5 +114,8 @@
   </script>
 </body>
 </html>
+
+
+
 
 
